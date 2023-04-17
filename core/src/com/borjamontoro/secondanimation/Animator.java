@@ -1,24 +1,37 @@
 package com.borjamontoro.secondanimation;
 
+import static com.badlogic.gdx.Input.Keys.DOWN;
+import static com.badlogic.gdx.Input.Keys.LEFT;
+import static com.badlogic.gdx.Input.Keys.RIGHT;
+import static com.badlogic.gdx.Input.Keys.UP;
+
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 public class Animator implements ApplicationListener {
 
 	// Constant rows and columns of the sprite sheet
 	private static final int FRAME_COLS = 6, FRAME_ROWS = 4;
-
+	protected int posX=50,posY=50;
+	//protected  int IDLE=0, UP=1, DOWN=2, LEFT=3, RIGHT=4
 	// Objects used
 	Animation<TextureRegion> walkAnimation; // Must declare frame type (TextureRegion)
 	Texture walkSheet;
 	SpriteBatch spriteBatch;
+	OrthographicCamera camera;
+
+
+	Rectangle up, down, left, right, fire;
 
 	// A variable for tracking elapsed time for the animation
 	float stateTime;
@@ -26,6 +39,12 @@ public class Animator implements ApplicationListener {
 	@Override
 	public void create() {
 
+		/*up = new Rectangle(0, SCR_HEIGHT*2/3, SCR_WIDTH, SCR_HEIGHT/3);
+		down = new Rectangle(0, 0, SCR_WIDTH, SCR_HEIGHT/3);
+		left = new Rectangle(0, 0, SCR_WIDTH/3, SCR_HEIGHT);
+		right = new Rectangle(SCR_WIDTH*2/3, 0, SCR_WIDTH/3, SCR_HEIGHT);*/
+		camera = new OrthographicCamera();
+		camera.setToOrtho(false, 800, 480);
 		// Load the sprite sheet as a Texture
 		walkSheet = new Texture(Gdx.files.internal("alien.png"));
 
@@ -62,13 +81,20 @@ public class Animator implements ApplicationListener {
 
 	@Override
 	public void render() {
+
+		int move= virtual_joystick_control();
+		if(move==LEFT){
+			posX += -1;
+		}else if (move==RIGHT){
+			posX += 1;
+		}
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT); // Clear screen
 		stateTime += Gdx.graphics.getDeltaTime(); // Accumulate elapsed animation time
 
 		// Get current frame of animation for the current stateTime
 		TextureRegion currentFrame = walkAnimation.getKeyFrame(stateTime, true);
 		spriteBatch.begin();
-		spriteBatch.draw(currentFrame, 50, 50); // Draw current frame at (50, 50)
+		spriteBatch.draw(currentFrame, posX, posY); // Draw current frame at (50, 50)
 		spriteBatch.end();
 	}
 
@@ -87,5 +113,28 @@ public class Animator implements ApplicationListener {
 		spriteBatch.dispose();
 		walkSheet.dispose();
 	}
+	protected int virtual_joystick_control() {
+		// iterar per multitouch
+		// cada "i" és un possible "touch" d'un dit a la pantalla
+		for(int i=0;i<10;i++)
+			if (Gdx.input.isTouched(i)) {
+				Vector3 touchPos = new Vector3();
+				touchPos.set(Gdx.input.getX(i), Gdx.input.getY(i), 0);
+				// traducció de coordenades reals (depen del dispositiu) a 800x480
+				camera.unproject(touchPos);
+				if (up.contains(touchPos.x, touchPos.y)) {
+					return UP;
+				} else if (down.contains(touchPos.x, touchPos.y)) {
+					return DOWN;
+				} else if (left.contains(touchPos.x, touchPos.y)) {
+					return LEFT;
+				} else if (right.contains(touchPos.x, touchPos.y)) {
+					return RIGHT;
+				}
+			}
+		//return IDLE;
+		return 1;
+	}
+
 }
 
